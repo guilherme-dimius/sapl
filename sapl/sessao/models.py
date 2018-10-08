@@ -268,6 +268,7 @@ class AbstractOrdemDia(models.Model):
             self.numero_ordem, self.materia, self.sessao_plenaria)
 
 
+@time_refresh
 @reversion.register()
 class ExpedienteMateria(AbstractOrdemDia):
 
