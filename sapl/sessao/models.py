@@ -7,7 +7,6 @@ from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 import reversion
 
-from sapl.api.apps import time_refresh
 from sapl.base.models import Autor
 from sapl.materia.models import MateriaLegislativa
 from sapl.parlamentares.models import (CargoMesa, Legislatura, Parlamentar,
@@ -108,7 +107,6 @@ def anexo_upload_path(instance, filename):
     # return get_sessao_media_path(instance, 'anexo', filename)
 
 
-@time_refresh
 @reversion.register()
 class SessaoPlenaria(models.Model):
     # TODO trash??? Seems to have been a FK in the past. Would be:
@@ -268,7 +266,6 @@ class AbstractOrdemDia(models.Model):
             self.numero_ordem, self.materia, self.sessao_plenaria)
 
 
-@time_refresh
 @reversion.register()
 class ExpedienteMateria(AbstractOrdemDia):
 
@@ -381,7 +378,6 @@ class OradorExpediente(AbstractOrador):  # OradoresExpediente
         verbose_name_plural = _('Oradores do Expediente')
 
 
-@time_refresh
 @reversion.register()
 class OrdemDia(AbstractOrdemDia):
 
