@@ -1,24 +1,19 @@
+from django.apps import apps
 from django.core.management.base import BaseCommand
-
-from sapl.parlamentares.models import Legislatura
-from sapl.s3.models import S3Legislatura
 
 
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        legislaturas = S3Legislatura.objects.all()
-        for leg in legislaturas:
-            if leg.ind_excluido:
-                continue
+        sapl_apps = apps.get_app_configs()
 
-            legis = Legislatura()
-            legis.id = leg.num_legislatura
-            legis.numero = leg.num_legislatura
-            legis.data_eleicao = leg.dat_eleicao
-            legis.data_inicio = leg.dat_inicio
-            legis.data_fim = leg.dat_fim
-            legis.save()
-
-            print(leg.num_legislatura)
+        for app in sapl_apps:
+            if app.name.startswith('sapl.') and not app.name.endswith('s3'):
+                for name, model in app.models.items():
+                    model_with_fk = False
+                    for field in model._meta.fields:
+                        if field.is_relation:
+                            model_with_fk = True
+                    if not model_with_fk:
+                        print(app.label, model._meta.object_name)
