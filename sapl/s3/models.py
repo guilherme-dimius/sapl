@@ -280,6 +280,7 @@ class _ComposicaoComissao(models.Model):
 
 
 class _ComposicaoMesa(models.Model):
+    cod_composicao = models.AutoField(primary_key=True)
     cod_parlamentar = models.IntegerField()
     cod_sessao_leg = models.IntegerField()
     cod_periodo_comp = models.IntegerField()
@@ -483,6 +484,8 @@ class _ExpedienteMateria(models.Model):
 
 
 class _ExpedienteSessaoPlenaria(models.Model):
+    cod_exp = models.AutoField(primary_key=True)
+
     cod_sessao_plen = models.IntegerField()
     cod_expediente = models.IntegerField()
     txt_expediente = models.TextField(blank=True, null=True)
@@ -495,6 +498,7 @@ class _ExpedienteSessaoPlenaria(models.Model):
 
 
 class _Filiacao(models.Model):
+    cod_filiacao = models.AutoField(primary_key=True)
     dat_filiacao = models.DateField()
     cod_parlamentar = models.IntegerField()
     cod_partido = models.IntegerField()
@@ -690,6 +694,7 @@ class _MateriaLegislativa(models.Model):
 
 
 class _MesaSessaoPlenaria(models.Model):
+    cod_integrante = models.AutoField(primary_key=True)
     cod_cargo = models.IntegerField()
     cod_sessao_leg = models.IntegerField()
     cod_parlamentar = models.IntegerField()

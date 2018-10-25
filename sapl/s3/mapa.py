@@ -11,7 +11,8 @@ from sapl.parlamentares.models import CargoMesa, Coligacao, ComposicaoColigacao,
 from sapl.protocoloadm.models import AcompanhamentoDocumento, DocumentoAcessorioAdministrativo, DocumentoAdministrativo, Protocolo, StatusTramitacaoAdministrativo, TipoDocumentoAdministrativo, TramitacaoAdministrativo
 from sapl.s3.adjust import adjust_tipoafastamento, adjust_tipo_comissao,\
     adjust_statustramitacao, adjust_tipo_autor, adjust_tiporesultadovotacao,\
-    adjust_orgao, adjust_assunto_norma, adjust_comissao, adjust_parlamentar
+    adjust_orgao, adjust_assunto_norma, adjust_comissao, adjust_parlamentar,\
+    adjust_mandato, adjust_composicao, adjust_autor, adjust_sessaoplenaria
 from sapl.s3.models import (
     _AcompMateria, _Afastamento, _Anexada, _AssuntoNorma, _Autor, _Autoria,
     _CargoComissao, _CargoMesa, _Comissao, _ComposicaoComissao, _ComposicaoMesa,
@@ -79,6 +80,10 @@ mapa = [
             ComissoesDocumentoAcessorio,
             TipoProposicao,
             Dependente,
+            Votante,
+            Participacao,
+            Reuniao,
+            Proposicao,
             'TipoProposicao_perfis',
             'Frente_parlamentares',
             'Bloco_partidos',
@@ -439,6 +444,135 @@ mapa = [
         },
         'adjust': adjust_parlamentar
     },
+    {
+        'name': '_filiacao',
+        's30_model': _Filiacao,
+        's31_model': Filiacao,
+        'fields': {
+            'id': 'cod_filiacao',
+            'data': 'dat_filiacao',
+            'parlamentar_id': 'cod_parlamentar',
+            'partido_id': 'cod_partido',
+            'data_desfiliacao': 'dat_desfiliacao',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
+    {
+        'name': '_composicaomesa',
+        's30_model': _ComposicaoMesa,
+        's31_model': ComposicaoMesa,
+        'fields': {
+            'id': 'cod_composicao',
+            'parlamentar_id': 'cod_parlamentar',
+            'sessao_legislativa_id': 'cod_sessao_leg',
+            'cargo_id': 'cod_cargo',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
+    {
+        'name': '_mandato',
+        's30_model': _Mandato,
+        's31_model': Mandato,
+        'fields': {
+            'id': 'cod_mandato',
+            'parlamentar_id': 'cod_parlamentar',
+            'tipo_afastamento_id': 'tip_afastamento',
+            'legislatura_id': 'num_legislatura',
+            'coligacao_id': 'cod_coligacao',
+            'data_inicio_mandato': 'dat_inicio_mandato',
+            'tipo_causa_fim_mandato': 'tip_causa_fim_mandato',
+            'data_fim_mandato': 'dat_fim_mandato',
+            'votos_recebidos': 'num_votos_recebidos',
+            'data_expedicao_diploma': 'dat_expedicao_diploma',
+            'observacao': 'txt_observacao',
+            'titular': 'ind_titular',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_mandato
+    },
+
+    {
+        'name': '_composicaocomissao',
+        's30_model': _ComposicaoComissao,
+        's31_model': Composicao,
+        'fields': {
+            'id': 'cod_comp_comissao',
+            'comissao_id': 'cod_comissao',
+            'periodo_id': 'cod_periodo_comp',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_composicao
+    },
+    {
+        'name': '_autor',
+        's30_model': _Autor,
+        's31_model': Autor,
+        'fields': {
+            'id': 'cod_autor',
+            'nome': 'nom_autor',
+            'cargo': 'des_cargo',
+            'tipo_id': 'tip_autor',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_autor
+    },
+    {
+        'name': '_unidadetramitacao',
+        's30_model': _UnidadeTramitacao,
+        's31_model': UnidadeTramitacao,
+        'fields': {
+            'id': 'cod_unid_tramitacao',
+            'comissao_id': 'cod_comissao',
+            'orgao_id': 'cod_orgao',
+            'parlamentar_id': 'cod_parlamentar',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
+    {
+        'name': '_sessaoplenaria',
+        's30_model': _SessaoPlenaria,
+        's31_model': SessaoPlenaria,
+        'fields': {
+            'id': 'cod_sessao_plen',
+            'cod_andamento_sessao': 'cod_andamento_sessao',
+            'tipo_id': 'tip_sessao',
+            'sessao_legislativa_id': 'cod_sessao_leg',
+            'legislatura_id': 'num_legislatura',
+            'data_inicio': 'dat_inicio_sessao',
+            'hora_inicio': 'hr_inicio_sessao',
+            'hora_fim': 'hr_fim_sessao',
+            'numero': 'num_sessao_plen',
+            'data_fim': 'dat_fim_sessao',
+            'url_audio': 'url_audio',
+            'url_video': 'url_video',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_sessaoplenaria,
+    },
+    {
+        'name': '_expedientesessaoplenaria',
+        's30_model': _ExpedienteSessaoPlenaria,
+        's31_model': ExpedienteSessao,
+        'fields': {
+            'id': 'cod_exp',
+            'sessao_plenaria_id': 'cod_sessao_plen',
+            'tipo_id': 'cod_expediente',
+            'conteudo': 'txt_expediente',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
+    {
+        'name': '_mesasessaoplenaria',
+        's30_model': _MesaSessaoPlenaria,
+        's31_model': IntegranteMesa,
+        'fields': {
+            'id': 'cod_integrante',
+            'cargo_id': 'cod_cargo',
+            'parlamentar_id': 'cod_parlamentar',
+            'sessao_plenaria_id': 'cod_sessao_plen',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
 ]
 
 mapa_a_processar = [
@@ -480,23 +614,6 @@ mapa_a_processar = [
         }
     },
     {
-        'name': '_autor',
-        's30_model': _Autor,
-        's31_model': None,
-        'fields': {
-            '': 'cod_autor',
-            '': 'cod_partido',
-                '': 'cod_comissao',
-                '': 'cod_bancada',
-                '': 'cod_parlamentar',
-                '': 'tip_autor',
-                '': 'nom_autor',
-                '': 'des_cargo',
-                '': 'col_username',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
         'name': '_autoria',
         's30_model': _Autoria,
         's31_model': None,
@@ -509,37 +626,6 @@ mapa_a_processar = [
         }
     },
 
-    {
-        'name': '_composicaocomissao',
-        's30_model': _ComposicaoComissao,
-        's31_model': None,
-        'fields': {
-            '': 'cod_comp_comissao',
-            '': 'cod_parlamentar',
-                '': 'cod_comissao',
-                '': 'cod_periodo_comp',
-                '': 'cod_cargo',
-                '': 'ind_titular',
-                '': 'dat_designacao',
-                '': 'dat_desligamento',
-                '': 'des_motivo_desligamento',
-                '': 'obs_composicao',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_composicaomesa',
-        's30_model': _ComposicaoMesa,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'cod_parlamentar',
-                '': 'cod_sessao_leg',
-                '': 'cod_periodo_comp',
-                '': 'cod_cargo',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
     {
         'name': '_cronometroaparte',
         's30_model': _CronometroAparte,
@@ -694,32 +780,6 @@ mapa_a_processar = [
         }
     },
     {
-        'name': '_expedientesessaoplenaria',
-        's30_model': _ExpedienteSessaoPlenaria,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'cod_sessao_plen',
-                '': 'cod_expediente',
-                '': 'txt_expediente',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_filiacao',
-        's30_model': _Filiacao,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'dat_filiacao',
-                '': 'cod_parlamentar',
-                '': 'cod_partido',
-                '': 'dat_desfiliacao',
-                'ind_excluido': 'ind_excluido',
-                '': 'teste'
-        }
-    },
-    {
         'name': '_legislacaocitada',
         's30_model': _LegislacaoCitada,
         's31_model': None,
@@ -754,26 +814,6 @@ mapa_a_processar = [
                 '': 'sgl_uf',
                 '': 'sgl_regiao',
                 'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_mandato',
-        's30_model': _Mandato,
-        's31_model': None,
-        'fields': {
-            '': 'cod_mandato',
-            '': 'cod_parlamentar',
-            '': 'tip_afastamento',
-            '': 'num_legislatura',
-            '': 'cod_coligacao',
-            '': 'dat_inicio_mandato',
-            '': 'tip_causa_fim_mandato',
-            '': 'dat_fim_mandato',
-            '': 'num_votos_recebidos',
-            '': 'dat_expedicao_diploma',
-            '': 'txt_observacao',
-            '': 'ind_titular',
-            'ind_excluido': 'ind_excluido'
         }
     },
     {
@@ -815,19 +855,7 @@ mapa_a_processar = [
                 '': 'ind_publico'
         }
     },
-    {
-        'name': '_mesasessaoplenaria',
-        's30_model': _MesaSessaoPlenaria,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'cod_cargo',
-                '': 'cod_sessao_leg',
-                '': 'cod_parlamentar',
-                '': 'cod_sessao_plen',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
+
     {
         'name': '_normajuridica',
         's30_model': _NormaJuridica,
@@ -1070,43 +1098,6 @@ mapa_a_processar = [
         }
     },
     {
-        'name': '_reuniaocomissao',
-        's30_model': _ReuniaoComissao,
-        's31_model': None,
-        'fields': {
-            '': 'cod_reuniao',
-            '': 'cod_comissao',
-            '': 'num_reuniao',
-            '': 'dat_inicio_reuniao',
-            '': 'hr_inicio_reuniao',
-            '': 'txt_observacao',
-            'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_sessaoplenaria',
-        's30_model': _SessaoPlenaria,
-        's31_model': None,
-        'fields': {
-            '': 'cod_sessao_plen',
-            '': 'cod_andamento_sessao',
-                '': 'tip_sessao',
-                '': 'cod_sessao_leg',
-                '': 'num_legislatura',
-                '': 'tip_expediente',
-                '': 'dat_inicio_sessao',
-                '': 'dia_sessao',
-                '': 'hr_inicio_sessao',
-                '': 'hr_fim_sessao',
-                '': 'num_sessao_plen',
-                '': 'dat_fim_sessao',
-                '': 'url_audio',
-                '': 'url_video',
-                '': 'ind_iniciada',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
         'name': '_sessaoplenariapresenca',
         's30_model': _SessaoPlenariaPresenca,
         's31_model': None,
@@ -1175,20 +1166,6 @@ mapa_a_processar = [
                 '': 'ind_ult_tramitacao',
                 '': 'txt_tramitacao',
                 '': 'dat_fim_prazo',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_unidadetramitacao',
-        's30_model': _UnidadeTramitacao,
-        's31_model': None,
-        'fields': {
-            '': 'cod_unid_tramitacao',
-            '': 'cod_comissao',
-                '': 'cod_orgao',
-                '': 'cod_parlamentar',
-                '': 'cod_unid_spdo',
-                '': 'txt_unid_spdo',
                 'ind_excluido': 'ind_excluido'
         }
     },

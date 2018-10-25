@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.core.management.base import BaseCommand
+from django.db.utils import IntegrityError
 
 from sapl.materia.models import MateriaLegislativa, DocumentoAcessorio
 from sapl.norma.models import NormaJuridica
@@ -14,8 +15,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.run()
+        # self.migrar_documentos()
+
         self.list_models_with_relation()
-        self.migrar_documentos()
 
     def migrar_documentos(self):
         for model in [
@@ -32,13 +34,17 @@ class Command(BaseCommand):
             print(e)
 
     def run(self):
-        for item in mapa.mapa[1:]:
-
+        for item in mapa.mapa[35:]:
+            print('Migrando...', item['s31_model']._meta.object_name)
             old_list = item['s30_model'].objects.all()
             if 'ind_excluido' in item['fields']:
                 old_list = old_list.filter(ind_excluido=0)
 
             for old in old_list:
+
+                if hasattr(old, 'ind_excluido') and old.ind_excluido is None:
+                    print(old.__dict__)
+                    return
 
                 try:
                     new = item['s31_model'].objects.get(
@@ -51,13 +57,14 @@ class Command(BaseCommand):
                         continue
                     setattr(new, new_field, getattr(old, old_field))
 
-                if 'adjust' in item:
-                    item['adjust'](new, old)
                 try:
+                    if 'adjust' in item:
+                        item['adjust'](new, old)
                     new.save()
+                # except IntegrityError as ie:
+                #    pass
                 except Exception as e:
-                    print('ERRO:', item['s31_model']._meta.object_name, new, e)
-            print('Migrado:', item['s31_model']._meta.object_name)
+                    self.print_erro(e, item, new)
 
     def list_models_with_relation(self):
         sapl_apps = apps.get_app_configs()
@@ -85,4 +92,29 @@ class Command(BaseCommand):
         for m in mapa.mapa[0]['s31_model']:
             if m == model or m == model._meta.object_name:
                 return True
+
         return False
+
+    def print_erro(self, e, item, new):
+        detail_de_master_excluido = (
+            '(parlamentar_id)=(18)',
+            '(parlamentar_id)=(35)',
+            '(parlamentar_id)=(42)',
+            '(parlamentar_id)=(40)',
+            '(parlamentar_id)=(41)',
+            '(parlamentar_id)=(38)',
+            '(parlamentar_id)=(39)',
+            '(parlamentar_id)=(37)',
+            '(parlamentar_id)=(28)',
+            '(sessao_plenaria_id)=(409)',
+            '(tipo_id)=(2) is not present in table "sessao_tipoexpediente"',
+
+        )
+        msg_localizada = False
+
+        for teste in detail_de_master_excluido:
+            if teste in str(e):
+                msg_localizada = True
+        if not msg_localizada:
+            print(
+                'ERRO:', item['s31_model']._meta.object_name, new.id, e)
