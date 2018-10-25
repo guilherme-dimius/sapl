@@ -52,6 +52,7 @@ class _AndamentoSessao(models.Model):
 
 
 class _Anexada(models.Model):
+    cod_anexada = models.AutoField(primary_key=True)
     cod_materia_principal = models.IntegerField()
     cod_materia_anexada = models.IntegerField()
     dat_anexacao = models.DateField()
@@ -117,6 +118,7 @@ class _Autor(models.Model):
 
 
 class _Autoria(models.Model):
+    cod_autoria = models.AutoField(primary_key=True)
     cod_autor = models.IntegerField()
     cod_materia = models.IntegerField()
     ind_primeiro_autor = models.IntegerField()
@@ -543,6 +545,7 @@ class _Instituicao(models.Model):
 
 
 class _LegislacaoCitada(models.Model):
+    cod_legis_citada = models.AutoField(primary_key=True)
     cod_materia = models.IntegerField()
     cod_norma = models.IntegerField()
     des_disposicoes = models.CharField(max_length=15, blank=True, null=True)
@@ -1165,6 +1168,7 @@ class _RegistroVotacao(models.Model):
 
 
 class _RegistroVotacaoParlamentar(models.Model):
+    cod_vot_parlamentar = models.AutoField(primary_key=True)
     cod_votacao = models.IntegerField()
     cod_parlamentar = models.IntegerField()
     ind_excluido = models.IntegerField()
@@ -1265,6 +1269,7 @@ class _SessaoPlenariaLog(models.Model):
 
 
 class _SessaoPlenariaPresenca(models.Model):
+    cod_presenca = models.AutoField(primary_key=True)
     cod_sessao_plen = models.IntegerField()
     cod_parlamentar = models.IntegerField()
     ind_excluido = models.IntegerField(blank=True, null=True)

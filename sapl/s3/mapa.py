@@ -12,7 +12,12 @@ from sapl.protocoloadm.models import AcompanhamentoDocumento, DocumentoAcessorio
 from sapl.s3.adjust import adjust_tipoafastamento, adjust_tipo_comissao,\
     adjust_statustramitacao, adjust_tipo_autor, adjust_tiporesultadovotacao,\
     adjust_orgao, adjust_assunto_norma, adjust_comissao, adjust_parlamentar,\
-    adjust_mandato, adjust_composicao, adjust_autor, adjust_sessaoplenaria
+    adjust_mandato, adjust_composicao, adjust_autor, adjust_sessaoplenaria,\
+    adjust_protocolo, adjust_documentoadministrativo,\
+    adjust_documentoacessorioadministrativo, adjust_materialegislativa,\
+    adjust_documentoacessorio, adjust_tramitacao, adjust_registrovotacao, \
+    adjust_expediente_ordem, adjust_registrovotacao_parlamentar,\
+    adjust_normajuridica, adjust_normarelacionada
 from sapl.s3.models import (
     _AcompMateria, _Afastamento, _Anexada, _AssuntoNorma, _Autor, _Autoria,
     _CargoComissao, _CargoMesa, _Comissao, _ComposicaoComissao, _ComposicaoMesa,
@@ -48,6 +53,7 @@ mapa = [
             NivelInstrucao,
             Frente,
             AssuntoMateria,
+            MateriaAssunto,
             TipoVinculoNormaJuridica,
             CargoBancada,
             Bloco,
@@ -84,6 +90,16 @@ mapa = [
             Participacao,
             Reuniao,
             Proposicao,
+            Orador,
+            OradorExpediente,
+            Numeracao,
+            Relatoria,
+            Parecer,
+            DespachoInicial,
+            AutoriaNorma,
+            'NormaJuridica_assuntos',
+
+
             'TipoProposicao_perfis',
             'Frente_parlamentares',
             'Bloco_partidos',
@@ -573,12 +589,337 @@ mapa = [
             'ind_excluido': 'ind_excluido'
         }
     },
+    {
+        'name': '_sessaoplenariapresenca',
+        's30_model': _SessaoPlenariaPresenca,
+        's31_model': SessaoPlenariaPresenca,
+        'fields': {
+            'id': 'cod_presenca',
+            'sessao_plenaria_id': 'cod_sessao_plen',
+            'parlamentar_id': 'cod_parlamentar',
+            'ind_excluido': 'ind_excluido',
+            'data_sessao': 'dat_presenca',
+        }
+    },
+    {
+        'name': '_ordemdiapresenca',
+        's30_model': _OrdemDiaPresenca,
+        's31_model': PresencaOrdemDia,
+        'fields': {
+            'id': 'cod_presenca_ordem_dia',
+            'sessao_plenaria_id': 'cod_sessao_plen',
+            'parlamentar_id': 'cod_parlamentar',
+            'ind_excluido': 'ind_excluido',
+        }
+    },
+    {
+        'name': '_protocolo',
+        's30_model': _Protocolo,
+        's31_model': Protocolo,
+        'fields': {
+            'id': 'cod_protocolo',
+            'numero': 'num_protocolo',
+            'ano': 'ano_protocolo',
+            'data': 'dat_protocolo',
+            'hora': 'hor_protocolo',
+            'timestamp': 'dat_timestamp',
+            'tipo_protocolo': 'tip_protocolo',
+            'tipo_processo': 'tip_processo',
+            'interessado': 'txt_interessado',
+            'autor_id': 'cod_autor',
+            'assunto_ementa': 'txt_assunto_ementa',
+            'tipo_documento_id': 'tip_documento',
+            'tipo_materia_id': 'tip_materia',
+            'numero_paginas': 'num_paginas',
+            'observacao': 'txt_observacao',
+            'anulado': 'ind_anulado',
+            'user_anulacao': 'txt_user_anulacao',
+            'ip_anulacao': 'txt_ip_anulacao',
+            'justificativa_anulacao': 'txt_just_anulacao',
+            'timestamp_anulacao': 'timestamp_anulacao',
+        },
+        'adjust': adjust_protocolo
+    },
+    {
+        'name': '_documentoadministrativo',
+        's30_model': _DocumentoAdministrativo,
+        's31_model': DocumentoAdministrativo,
+        'fields': {
+            'id': 'cod_documento',
+            'tipo_id': 'tip_documento',
+            'numero': 'num_documento',
+            'ano': 'ano_documento',
+            'data': 'dat_documento',
+            'interessado': 'txt_interessado',
+            'autor_id': 'cod_autor',
+            'dias_prazo': 'num_dias_prazo',
+            'data_fim_prazo': 'dat_fim_prazo',
+            'tramitacao': 'ind_tramitacao',
+            'assunto': 'txt_assunto',
+            'observacao': 'txt_observacao',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_documentoadministrativo
+    },
+    {
+        'name': '_documentoacessorioadministrativo',
+        's30_model': _DocumentoAcessorioAdministrativo,
+        's31_model': DocumentoAcessorioAdministrativo,
+        'fields': {
+            'id': 'cod_documento_acessorio',
+            'documento_id': 'cod_documento',
+            'tipo_id': 'tip_documento',
+            'nome': 'nom_documento',
+            'data': 'dat_documento',
+            'autor': 'nom_autor_documento',
+            'assunto': 'txt_assunto',
+            'indexacao': 'txt_indexacao',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_documentoacessorioadministrativo
+    },
+    {
+        'name': '_tramitacaoadministrativo',
+        's30_model': _TramitacaoAdministrativo,
+        's31_model': TramitacaoAdministrativo,
+        'fields': {
+            'id': 'cod_tramitacao',
+            'documento_id': 'cod_documento',
+            'data_tramitacao': 'dat_tramitacao',
+            'unidade_tramitacao_local_id': 'cod_unid_tram_local',
+            'data_encaminhamento': 'dat_encaminha',
+            'unidade_tramitacao_destino_id': 'cod_unid_tram_dest',
+            'status_id': 'cod_status',
+            'texto': 'txt_tramitacao',
+            'data_fim_prazo': 'dat_fim_prazo',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
+    {
+        'name': '_materialegislativa',
+        's30_model': _MateriaLegislativa,
+        's31_model': MateriaLegislativa,
+        'fields': {
+            'id': 'cod_materia',
+            'tipo_id': 'tip_id_basica',
+            'numero_protocolo': 'num_protocolo',
+            'numero': 'num_ident_basica',
+            'ano': 'ano_ident_basica',
+            'data_apresentacao': 'dat_apresentacao',
+            'regime_tramitacao_id': 'cod_regime_tramitacao',
+            'data_publicacao': 'dat_publicacao',
+            'tipo_origem_externa_id': 'tip_origem_externa',
+            'numero_origem_externa': 'num_origem_externa',
+            'ano_origem_externa': 'ano_origem_externa',
+            'data_origem_externa': 'dat_origem_externa',
+            'local_origem_externa_id': 'cod_local_origem_externa',
+            'apelido': 'nom_apelido',
+            'dias_prazo': 'num_dias_prazo',
+            'data_fim_prazo': 'dat_fim_prazo',
+            'em_tramitacao': 'ind_tramitacao',
+            'polemica': 'ind_polemica',
+            'objeto': 'des_objeto',
+            'complementar': 'ind_complementar',
+            'ementa': 'txt_ementa',
+            'indexacao': 'txt_indexacao',
+            'observacao': 'txt_observacao',
+            'resultado': 'txt_resultado',
+            'ind_excluido': 'ind_excluido',
+        },
+        'adjust': adjust_materialegislativa
+    },
+    {
+        'name': '_anexada',
+        's30_model': _Anexada,
+        's31_model': Anexada,
+        'fields': {
+            'id': 'cod_anexada',
+            'materia_principal_id': 'cod_materia_principal',
+            'materia_anexada_id': 'cod_materia_anexada',
+            'data_anexacao': 'dat_anexacao',
+            'data_desanexacao': 'dat_desanexacao',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
+    {
+        'name': '_autoria',
+        's30_model': _Autoria,
+        's31_model': Autoria,
+        'fields': {
+            'id': 'cod_autoria',
+            'autor_id': 'cod_autor',
+            'materia_id': 'cod_materia',
+            'primeiro_autor': 'ind_primeiro_autor',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
+
+    {
+        'name': '_documentoacessorio',
+        's30_model': _DocumentoAcessorio,
+        's31_model': DocumentoAcessorio,
+        'fields': {
+            'id': 'cod_documento',
+            'materia_id': 'cod_materia',
+            'tipo_id': 'tip_documento',
+            'nome': 'nom_documento',
+            'data': 'dat_documento',
+            'autor': 'nom_autor_documento',
+            'ementa': 'txt_ementa',
+            'indexacao': 'txt_observacao',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_documentoacessorio
+    },
+    {
+        'name': '_tramitacao',
+        's30_model': _Tramitacao,
+        's31_model': Tramitacao,
+        'fields': {
+            'id': 'cod_tramitacao',
+            'status_id': 'cod_status',
+            'materia_id': 'cod_materia',
+            'data_tramitacao': 'dat_tramitacao',
+            'unidade_tramitacao_local_id': 'cod_unid_tram_local',
+            'data_encaminhamento': 'dat_encaminha',
+            'unidade_tramitacao_destino_id': 'cod_unid_tram_dest',
+            'urgente': 'ind_urgencia',
+            'turno': 'sgl_turno',
+            'texto': 'txt_tramitacao',
+            'data_fim_prazo': 'dat_fim_prazo',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_tramitacao
+    },
+    {
+        'name': '_expedientemateria',
+        's30_model': _ExpedienteMateria,
+        's31_model': ExpedienteMateria,
+        'fields': {
+            'id': 'cod_ordem',
+            'sessao_plenaria_id': 'cod_sessao_plen',
+            'materia_id': 'cod_materia',
+            'data_ordem': 'dat_ordem',
+            'observacao': 'txt_tramitacao',
+            'ind_excluido': 'ind_excluido',
+            'numero_ordem': 'num_ordem',
+            'tipo_votacao': 'tip_votacao',
+        },
+        'adjust': adjust_expediente_ordem
+    },
+    {
+        'name': '_ordemdia',
+        's30_model': _OrdemDia,
+        's31_model': OrdemDia,
+        'fields': {
+            'id': 'cod_ordem',
+            'sessao_plenaria_id': 'cod_sessao_plen',
+            'materia_id': 'cod_materia',
+            'data_ordem': 'dat_ordem',
+            'observacao': 'txt_tramitacao',
+            'ind_excluido': 'ind_excluido',
+            'numero_ordem': 'num_ordem',
+            'tipo_votacao': 'tip_votacao',
+        },
+        'adjust': adjust_expediente_ordem
+    },
+    {
+        'name': '_registrovotacao',
+        's30_model': _RegistroVotacao,
+        's31_model': RegistroVotacao,
+        'fields': {
+            'id': 'cod_votacao',
+            'tipo_resultado_votacao_id': 'tip_resultado_votacao',
+            'materia_id': 'cod_materia',
+            'numero_votos_sim': 'num_votos_sim',
+            'numero_votos_nao': 'num_votos_nao',
+            'numero_abstencoes': 'num_abstencao',
+            'observacao': 'txt_observacao',
+            'ind_excluido': 'ind_excluido',
+        },
+        'adjust': adjust_registrovotacao
+    },
+
+    {
+        'name': '_registrovotacaoparlamentar',
+        's30_model': _RegistroVotacaoParlamentar,
+        's31_model': VotoParlamentar,
+        'fields': {
+            'id': 'cod_vot_parlamentar',
+            'votacao_id': 'cod_votacao',
+            'parlamentar_id': 'cod_parlamentar',
+            'ind_excluido': 'ind_excluido',
+            'voto': 'vot_parlamentar',
+        },
+        'adjust': adjust_registrovotacao_parlamentar
+    },
+
+    {
+        'name': '_normajuridica',
+        's30_model': _NormaJuridica,
+        's31_model': NormaJuridica,
+        'fields': {
+            'id': 'cod_norma',
+            'tipo_id': 'tip_norma',
+            'materia_id': 'cod_materia',
+            'numero': 'num_norma',
+            'ano': 'ano_norma',
+            'esfera_federacao': 'tip_esfera_federacao',
+            'data': 'dat_norma',
+            'data_publicacao': 'dat_publicacao',
+            'veiculo_publicacao': 'des_veiculo_publicacao',
+            'pagina_inicio_publicacao': 'num_pag_inicio_publ',
+            'pagina_fim_publicacao': 'num_pag_fim_publ',
+            'ementa': 'txt_ementa',
+            'indexacao': 'txt_indexacao',
+            'observacao': 'txt_observacao',
+            'complemento': 'ind_complemento',
+            'ind_excluido': 'ind_excluido',
+            'data_vigencia': 'dat_vigencia',
+            'timestamp': 'timestamp'
+        },
+        'adjust': adjust_normajuridica
+    },
+    {
+        'name': '_legislacaocitada',
+        's30_model': _LegislacaoCitada,
+        's31_model': LegislacaoCitada,
+        'fields': {
+            'id': 'cod_legis_citada',
+            'materia_id': 'cod_materia',
+            'norma_id': 'cod_norma',
+            'disposicoes': 'des_disposicoes',
+            'parte': 'des_parte',
+            'livro': 'des_livro',
+            'titulo': 'des_titulo',
+            'capitulo': 'des_capitulo',
+            'secao': 'des_secao',
+            'subsecao': 'des_subsecao',
+            'artigo': 'des_artigo',
+            'paragrafo': 'des_paragrafo',
+            'inciso': 'des_inciso',
+            'alinea': 'des_alinea',
+            'item': 'des_item',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
+
+    {
+        'name': '_vinculonormajuridica',
+        's30_model': _VinculoNormaJuridica,
+        's31_model': NormaRelacionada,
+        'fields': {
+            'id': 'cod_vinculo',
+            'norma_principal_id': 'cod_norma_referente',
+            'norma_relacionada_id': 'cod_norma_referida',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_normarelacionada
+    }
 ]
 
 mapa_a_processar = [
     # TODO: processar
-
-
 
 
 
@@ -600,32 +941,6 @@ mapa_a_processar = [
             'ind_excluido': 'ind_excluido'
         }
     },
-    {
-        'name': '_anexada',
-        's30_model': _Anexada,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'cod_materia_principal',
-                '': 'cod_materia_anexada',
-                '': 'dat_anexacao',
-                '': 'dat_desanexacao',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_autoria',
-        's30_model': _Autoria,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'cod_autor',
-                '': 'cod_materia',
-                '': 'ind_primeiro_autor',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-
     {
         'name': '_cronometroaparte',
         's30_model': _CronometroAparte,
@@ -706,103 +1021,6 @@ mapa_a_processar = [
         }
     },
     {
-        'name': '_documentoacessorio',
-        's30_model': _DocumentoAcessorio,
-        's31_model': None,
-        'fields': {
-            '': 'cod_documento',
-            '': 'cod_materia',
-                '': 'tip_documento',
-                '': 'nom_documento',
-                '': 'dat_documento',
-                '': 'nom_autor_documento',
-                '': 'txt_ementa',
-                '': 'txt_observacao',
-                '': 'txt_indexacao',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_documentoacessorioadministrativo',
-        's30_model': _DocumentoAcessorioAdministrativo,
-        's31_model': None,
-        'fields': {
-            '': 'cod_documento_acessorio',
-            '': 'cod_documento',
-                '': 'tip_documento',
-                '': 'nom_documento',
-                '': 'nom_arquivo',
-                '': 'dat_documento',
-                '': 'nom_autor_documento',
-                '': 'txt_assunto',
-                '': 'txt_indexacao',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_documentoadministrativo',
-        's30_model': _DocumentoAdministrativo,
-        's31_model': None,
-        'fields': {
-            '': 'cod_documento',
-            '': 'tip_documento',
-                '': 'num_documento',
-                '': 'ano_documento',
-                '': 'dat_documento',
-                '': 'num_protocolo',
-                '': 'txt_interessado',
-                '': 'cod_autor',
-                '': 'num_dias_prazo',
-                '': 'dat_fim_prazo',
-                '': 'ind_tramitacao',
-                '': 'txt_assunto',
-                '': 'txt_observacao',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_expedientemateria',
-        's30_model': _ExpedienteMateria,
-        's31_model': None,
-        'fields': {
-            '': 'cod_ordem',
-            '': 'cod_sessao_plen',
-                '': 'cod_materia',
-                '': 'dat_ordem',
-                '': 'txt_observacao',
-                '': 'txt_tramitacao',
-                'ind_excluido': 'ind_excluido',
-                '': 'num_ordem',
-                '': 'txt_resultado',
-                '': 'tip_votacao',
-                '': 'ind_votacao_iniciada',
-                '': 'dat_ultima_votacao'
-        }
-    },
-    {
-        'name': '_legislacaocitada',
-        's30_model': _LegislacaoCitada,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'cod_materia',
-                '': 'cod_norma',
-                '': 'des_disposicoes',
-                '': 'des_parte',
-                '': 'des_livro',
-                '': 'des_titulo',
-                '': 'des_capitulo',
-                '': 'des_secao',
-                '': 'des_subsecao',
-                '': 'des_artigo',
-                '': 'des_paragrafo',
-                '': 'des_inciso',
-                '': 'des_alinea',
-                '': 'des_item',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
         'name': '_localidade',
         's30_model': _Localidade,
         's31_model': None,
@@ -816,88 +1034,7 @@ mapa_a_processar = [
                 'ind_excluido': 'ind_excluido'
         }
     },
-    {
-        'name': '_materialegislativa',
-        's30_model': _MateriaLegislativa,
-        's31_model': None,
-        'fields': {
-            '': 'cod_materia',
-            '': 'tip_id_basica',
-                '': 'num_protocolo',
-                '': 'num_protocolo_spdo',
-                '': 'num_ident_basica',
-                '': 'ano_ident_basica',
-                '': 'dat_apresentacao',
-                '': 'tip_apresentacao',
-                '': 'cod_regime_tramitacao',
-                '': 'dat_publicacao',
-                '': 'tip_origem_externa',
-                '': 'num_origem_externa',
-                '': 'ano_origem_externa',
-                '': 'dat_origem_externa',
-                '': 'cod_local_origem_externa',
-                '': 'nom_apelido',
-                '': 'num_dias_prazo',
-                '': 'dat_fim_prazo',
-                '': 'ind_tramitacao',
-                '': 'ind_polemica',
-                '': 'des_objeto',
-                '': 'ind_complementar',
-                '': 'txt_ementa',
-                '': 'txt_indexacao',
-                '': 'txt_observacao',
-                '': 'cod_situacao',
-                'ind_excluido': 'ind_excluido',
-                '': 'txt_resultado',
-                '': 'txt_cep',
-                '': 'txt_latitude',
-                '': 'txt_longitude',
-                '': 'ind_publico'
-        }
-    },
 
-    {
-        'name': '_normajuridica',
-        's30_model': _NormaJuridica,
-        's31_model': None,
-        'fields': {
-            '': 'cod_norma',
-            '': 'tip_norma',
-                '': 'cod_materia',
-                '': 'num_norma',
-                '': 'ano_norma',
-                '': 'tip_esfera_federacao',
-                '': 'dat_norma',
-                '': 'dat_publicacao',
-                '': 'des_veiculo_publicacao',
-                '': 'num_pag_inicio_publ',
-                '': 'num_pag_fim_publ',
-                '': 'txt_ementa',
-                '': 'txt_indexacao',
-                '': 'txt_observacao',
-                '': 'ind_complemento',
-                '': 'cod_assunto',
-                '': 'cod_situacao',
-                'ind_excluido': 'ind_excluido',
-                '': 'dat_vigencia',
-                '': 'timestamp'
-        }
-    },
-    {
-        'name': '_numeracao',
-        's30_model': _Numeracao,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'cod_materia',
-                '': 'num_ordem',
-                '': 'tip_materia',
-                '': 'num_materia',
-                '': 'ano_materia',
-                '': 'dat_materia',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
     {
         'name': '_oradoresexpediente',
         's30_model': _OradoresExpediente,
@@ -909,44 +1046,6 @@ mapa_a_processar = [
                 '': 'num_ordem',
                 '': 'url_discurso',
                 'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_ordemdia',
-        's30_model': _OrdemDia,
-        's31_model': None,
-        'fields': {
-            '': 'cod_ordem',
-            '': 'cod_sessao_plen',
-                '': 'cod_materia',
-                '': 'dat_ordem',
-                '': 'txt_observacao',
-                '': 'txt_tramitacao',
-                'ind_excluido': 'ind_excluido',
-                '': 'num_ordem',
-                '': 'txt_resultado',
-                '': 'tip_votacao',
-                '': 'ind_votacao_iniciada',
-                '': 'dat_ultima_votacao',
-                '': 'tip_quorum'
-        }
-    },
-    {
-        'name': '_ordemdiapresenca',
-        's30_model': _OrdemDiaPresenca,
-        's31_model': None,
-        'fields': {
-            '': 'cod_parlamentar',
-            'ind_excluido': 'ind_excluido',
-                '': 'dat_ordem',
-                '': 'dat_presenca',
-                '': 'cod_ip',
-                '': 'cod_mac',
-                '': 'cod_perfil',
-                '': 'ind_recontagem',
-                '': 'num_id_quorum',
-                '': 'cod_sessao_plen',
-                '': 'cod_presenca_ordem_dia'
         }
     },
 
@@ -979,36 +1078,6 @@ mapa_a_processar = [
                 '': 'txt_justif_devolucao',
                 '': 'txt_observacao',
                 'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_protocolo',
-        's30_model': _Protocolo,
-        's31_model': None,
-        'fields': {
-            '': 'cod_protocolo',
-            '': 'num_protocolo',
-                '': 'ano_protocolo',
-                '': 'dat_protocolo',
-                '': 'hor_protocolo',
-                '': 'dat_timestamp',
-                '': 'tip_protocolo',
-                '': 'tip_processo',
-                '': 'txt_interessado',
-                '': 'cod_autor',
-                '': 'txt_assunto_ementa',
-                '': 'tip_documento',
-                '': 'tip_materia',
-                '': 'cod_documento',
-                '': 'cod_materia',
-                '': 'num_paginas',
-                '': 'txt_observacao',
-                '': 'ind_anulado',
-                '': 'txt_user_anulacao',
-                '': 'txt_ip_anulacao',
-                '': 'txt_just_anulacao',
-                '': 'timestamp_anulacao',
-                '': 'num_protocolo_spdo'
         }
     },
     {
@@ -1049,136 +1118,5 @@ mapa_a_processar = [
                 'ind_excluido': 'ind_excluido'
         }
     },
-    {
-        'name': '_registrovotacao',
-        's30_model': _RegistroVotacao,
-        's31_model': None,
-        'fields': {
-            '': 'cod_votacao',
-            '': 'tip_resultado_votacao',
-                '': 'cod_materia',
-                '': 'cod_ordem',
-                '': 'num_votos_sim',
-                '': 'num_votos_nao',
-                '': 'num_abstencao',
-                '': 'txt_observacao',
-                'ind_excluido': 'ind_excluido',
-                '': 'num_nao_votou'
-        }
-    },
-    {
-        'name': '_registrovotacaoparlamentar',
-        's30_model': _RegistroVotacaoParlamentar,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'cod_votacao',
-                '': 'cod_parlamentar',
-                'ind_excluido': 'ind_excluido',
-                '': 'vot_parlamentar',
-                '': 'txt_login'
-        }
-    },
-    {
-        'name': '_relatoria',
-        's30_model': _Relatoria,
-        's31_model': None,
-        'fields': {
-            '': 'cod_relatoria',
-            '': 'cod_materia',
-                '': 'cod_parlamentar',
-                '': 'tip_fim_relatoria',
-                '': 'cod_comissao',
-                '': 'dat_desig_relator',
-                '': 'dat_destit_relator',
-                '': 'tip_apresentacao',
-                '': 'txt_parecer',
-                '': 'tip_conclusao',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_sessaoplenariapresenca',
-        's30_model': _SessaoPlenariaPresenca,
-        's31_model': None,
-        'fields': {
-            '': 'id',
-            '': 'cod_sessao_plen',
-                '': 'cod_parlamentar',
-                'ind_excluido': 'ind_excluido',
-                '': 'dat_presenca',
-                '': 'cod_ip',
-                '': 'cod_mac',
-                '': 'cod_perfil',
-                '': 'ind_recontagem'
-        }
-    },
-    {
-        'name': '_tramitacao',
-        's30_model': _Tramitacao,
-        's31_model': None,
-        'fields': {
-            '': 'cod_tramitacao',
-            '': 'cod_status',
-                '': 'cod_materia',
-                '': 'dat_tramitacao',
-                '': 'cod_unid_tram_local',
-                '': 'dat_encaminha',
-                '': 'cod_unid_tram_dest',
-                '': 'ind_ult_tramitacao',
-                '': 'ind_urgencia',
-                '': 'sgl_turno',
-                '': 'txt_tramitacao',
-                '': 'dat_fim_prazo',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_tramitacaoadministrativo',
-        's30_model': _TramitacaoAdministrativo,
-        's31_model': None,
-        'fields': {
-            '': 'cod_tramitacao',
-            '': 'cod_documento',
-                '': 'dat_tramitacao',
-                '': 'cod_unid_tram_local',
-                '': 'dat_encaminha',
-                '': 'cod_unid_tram_dest',
-                '': 'cod_status',
-                '': 'ind_ult_tramitacao',
-                '': 'txt_tramitacao',
-                '': 'dat_fim_prazo',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_tramitacaoparecer',
-        's30_model': _TramitacaoParecer,
-        's31_model': None,
-        'fields': {
-            '': 'cod_tramitacao',
-            '': 'cod_documento',
-                '': 'dat_tramitacao',
-                '': 'cod_unid_tram_local',
-                '': 'dat_encaminha',
-                '': 'cod_unid_tram_dest',
-                '': 'cod_status',
-                '': 'ind_ult_tramitacao',
-                '': 'txt_tramitacao',
-                '': 'dat_fim_prazo',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_vinculonormajuridica',
-        's30_model': _VinculoNormaJuridica,
-        's31_model': None,
-        'fields': {
-            '': 'cod_vinculo',
-            '': 'cod_norma_referente',
-                '': 'cod_norma_referida',
-                '': 'tip_vinculo',
-                'ind_excluido': 'ind_excluido'
-        }
-    }
+
 ]

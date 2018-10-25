@@ -5,8 +5,11 @@ from operator import xor
 from django.contrib.contenttypes.models import ContentType
 
 from sapl.comissoes.models import Participacao, Comissao
+from sapl.norma.models import AssuntoNorma, TipoVinculoNormaJuridica
 from sapl.parlamentares.models import Legislatura, Parlamentar, Partido
-from sapl.sessao.models import TipoResultadoVotacao
+from sapl.protocoloadm.models import Protocolo
+from sapl.sessao.models import TipoResultadoVotacao, OrdemDia, ExpedienteMateria,\
+    RegistroVotacao
 from sapl.utils import normalize
 
 
@@ -150,3 +153,122 @@ def adjust_sessaoplenaria(new, old):
         new.url_video = ''
 
     new.expedientesessao_set.all().delete()
+
+
+def adjust_protocolo(new, old):
+    if not new.interessado:
+        new.interessado = ''
+
+    if not new.user_anulacao:
+        new.user_anulacao = ''
+    if not new.ip_anulacao:
+        new.ip_anulacao = ''
+    if not new.justificativa_anulacao:
+        new.justificativa_anulacao = ''
+
+    # Uma fase que se criou um autor "todos parlamentares"
+    if new.autor_id == 21:
+        new.autor_id = None
+
+
+def adjust_documentoadministrativo(new, old):
+    if old.num_protocolo:
+        numero, ano = old.num_protocolo, new.ano
+        # False < True => o primeiro será o protocolo não anulado
+        protocolos = Protocolo.objects.filter(
+            numero=numero, ano=ano).order_by('anulado')
+        if protocolos:
+            new.protocolo = protocolos[0]
+        else:
+            # Se não achamos o protocolo registramos no número externo
+            new.numero_externo = numero
+
+
+def adjust_documentoacessorioadministrativo(new, old):
+    if not new.assunto:
+        new.assunto = ''
+    if not new.indexacao:
+        new.indexacao = ''
+
+
+def adjust_materialegislativa(new, old):
+    new.tipo_apresentacao = 'E'
+
+    if not new.resultado:
+        new.resultado = ''
+
+
+def adjust_documentoacessorio(new, old):
+    if not new.ementa:
+        new.ementa = ''
+    if not new.indexacao:
+        new.indexacao = ''
+
+
+def adjust_tramitacao(new, old):
+    if not new.turno:
+        new.turno = 'U'
+
+
+def adjust_expediente_ordem(new, old):
+    if not new.observacao:
+        new.observacao = ''
+
+
+def adjust_registrovotacao_parlamentar(new, old):
+
+    votacao = RegistroVotacao.objects.get(pk=new.votacao_id)
+
+    new.ordem = votacao.ordem
+    new.expediente = votacao.expediente
+
+
+def adjust_registrovotacao(new, old):
+
+    if old.num_nao_votou:
+        new.numero_abstencoes = new.numero_abstencoes + old.num_nao_votou
+
+    ordem_dia = OrdemDia.objects.filter(
+        pk=old.cod_ordem, materia=old.cod_materia)
+    expediente_materia = ExpedienteMateria.objects.filter(
+        pk=old.cod_ordem, materia=old.cod_materia)
+
+    if ordem_dia and not expediente_materia:
+        new.ordem = ordem_dia[0]
+    if not ordem_dia and expediente_materia:
+        new.expediente = expediente_materia[0]
+
+    # registro de votação ambíguo
+    if ordem_dia and expediente_materia:
+        raise Exception('Registro de Votação ambíguo')
+
+
+def adjust_normajuridica(new, old):
+    if not new.indexacao:
+        new.indexacao = ''
+    if not new.observacao:
+        new.observacao = ''
+    if not new.veiculo_publicacao:
+        new.veiculo_publicacao = ''
+    new.assuntos.clear()
+
+    assuntos_id = old.cod_assunto.split(',')
+    if not assuntos_id:
+        return
+    new.save()
+    assuntos = AssuntoNorma.objects.filter(id__in=assuntos_id)
+    if assuntos.exists():
+        new.assuntos.add(*assuntos)
+
+
+def adjust_normarelacionada(new, old):
+    try:
+        new.tipo_vinculo = TipoVinculoNormaJuridica.objects.get(
+            sigla=old.tip_vinculo)
+    except:
+        tipo = TipoVinculoNormaJuridica()
+        tipo.sigla = 'Z'
+        tipo.descricao_ativa = 'Autógrafo da Norma:'
+        tipo.descricao_passiva = 'Autógrafo Transformado em Lei'
+        tipo.save()
+        new.tipo_vinculo = tipo

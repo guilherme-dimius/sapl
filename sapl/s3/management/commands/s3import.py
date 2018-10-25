@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.core.management.base import BaseCommand
+from django.db import connection
 from django.db.utils import IntegrityError
 
 from sapl.materia.models import MateriaLegislativa, DocumentoAcessorio
@@ -15,18 +16,18 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.run()
-        # self.migrar_documentos()
-
-        self.list_models_with_relation()
+        self.migrar_documentos()
+        self.reset_sequences()
+        # self.list_models_with_relation()
 
     def migrar_documentos(self):
         for model in [
             Parlamentar,
-            # MateriaLegislativa,
-            # DocumentoAcessorio,
-            # NormaJuridica,
-            # DocumentoAdministrativo,
-            # DocumentoAcessorioAdministrativo,
+            MateriaLegislativa,
+            DocumentoAcessorio,
+            NormaJuridica,
+            DocumentoAdministrativo,
+            DocumentoAcessorioAdministrativo,
         ]:
             migrar_docs_por_ids(model)
 
@@ -34,13 +35,21 @@ class Command(BaseCommand):
             print(e)
 
     def run(self):
-        for item in mapa.mapa[35:]:
+        for item in mapa.mapa[1:]:
             print('Migrando...', item['s31_model']._meta.object_name)
             old_list = item['s30_model'].objects.all()
             if 'ind_excluido' in item['fields']:
                 old_list = old_list.filter(ind_excluido=0)
 
+            count_old_list = old_list.count()
+            count = 0
             for old in old_list:
+                count += 1
+
+                if count_old_list > 1000 and count % 100 == 0:
+                    print('Migrando...',
+                          item['s31_model']._meta.object_name,
+                          count, 'de', count_old_list)
 
                 if hasattr(old, 'ind_excluido') and old.ind_excluido is None:
                     print(old.__dict__)
@@ -65,6 +74,32 @@ class Command(BaseCommand):
                 #    pass
                 except Exception as e:
                     self.print_erro(e, item, new)
+
+    def reset_sequences(self):
+        def _get_registration_key(model):
+            return '%s_%s' % (model._meta.app_label, model._meta.model_name)
+
+        def reset_model(model):
+
+            query = """SELECT setval(pg_get_serial_sequence('"%(app_model_name)s"','id'),
+                        coalesce(max("id"), 1), max("id") IS NOT null) 
+                        FROM "%(app_model_name)s";
+                    """ % {
+                'app_model_name': _get_registration_key(model)
+            }
+
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                # get all the rows as a list
+                rows = cursor.fetchall()
+                print(rows)
+
+        for model in mapa.mapa[0]['s31_model']:
+            if not isinstance(model, str):
+                reset_model(model)
+
+        for model in mapa.mapa[1:]:
+            reset_model(model['s31_model'])
 
     def list_models_with_relation(self):
         sapl_apps = apps.get_app_configs()
@@ -108,6 +143,17 @@ class Command(BaseCommand):
             '(parlamentar_id)=(28)',
             '(sessao_plenaria_id)=(409)',
             '(tipo_id)=(2) is not present in table "sessao_tipoexpediente"',
+            ' "unidade_tramitacao_destino_id" violates not-null constraint',
+            '"materia_autoria"',
+            '"materia_anexada"',
+            '"materia_tramitacao"',
+            '"sessao_expedientemateria" violates foreign '
+            'key constraint "sessao_exp_materia_id_',
+            '"sessao_registrovotacao" violates foreign key '
+            'constraint "sessao_reg_materia_id',
+
+
+
 
         )
         msg_localizada = False
