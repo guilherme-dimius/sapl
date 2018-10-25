@@ -1,8 +1,17 @@
-from sapl.comissoes.models import TipoComissao, Periodo, CargoComissao
-from sapl.legacy.migracao_dados import adjust_tipoafastamento
-from sapl.materia.models import TipoMateriaLegislativa
-from sapl.parlamentares.models import Legislatura, Partido, SessaoLegislativa,\
-    TipoDependente, TipoAfastamento, CargoMesa
+from sapl.audiencia.models import AnexoAudienciaPublica, AudienciaPublica, TipoAudienciaPublica
+from sapl.base.models import AppConfig, Autor, CasaLegislativa, TipoAutor
+from sapl.comissoes.models import CargoComissao, Comissao, Composicao, Participacao, Periodo, Reuniao, TipoComissao
+from sapl.comissoes.models import DocumentoAcessorio as ComissoesDocumentoAcessorio
+from sapl.compilacao.models import Dispositivo, Nota, PerfilEstruturalTextoArticulado, Publicacao, TextoArticulado, TipoDispositivo, TipoDispositivoRelationship, TipoNota, TipoPublicacao, TipoTextoArticulado, TipoVide, VeiculoPublicacao, Vide
+from sapl.lexml.models import LexmlProvedor, LexmlPublicador
+from sapl.materia.models import AcompanhamentoMateria, Anexada, AssuntoMateria, Autoria, DespachoInicial, DocumentoAcessorio, MateriaAssunto, MateriaLegislativa, Numeracao, Orgao, Origem, Parecer, Proposicao, RegimeTramitacao, Relatoria, StatusTramitacao, TipoDocumento, TipoFimRelatoria, TipoMateriaLegislativa, TipoProposicao, Tramitacao, UnidadeTramitacao
+from sapl.norma.models import AnexoNormaJuridica, AssuntoNorma, AutoriaNorma, LegislacaoCitada, NormaJuridica, NormaRelacionada, TipoNormaJuridica, TipoVinculoNormaJuridica
+from sapl.painel.models import Cronometro, Painel
+from sapl.parlamentares.models import CargoMesa, Coligacao, ComposicaoColigacao, ComposicaoMesa, Dependente, Filiacao, Frente, Legislatura, Mandato, NivelInstrucao, Parlamentar, Partido, SessaoLegislativa, SituacaoMilitar, TipoAfastamento, TipoDependente, Votante
+from sapl.protocoloadm.models import AcompanhamentoDocumento, DocumentoAcessorioAdministrativo, DocumentoAdministrativo, Protocolo, StatusTramitacaoAdministrativo, TipoDocumentoAdministrativo, TramitacaoAdministrativo
+from sapl.s3.adjust import adjust_tipoafastamento, adjust_tipo_comissao,\
+    adjust_statustramitacao, adjust_tipo_autor, adjust_tiporesultadovotacao,\
+    adjust_orgao, adjust_assunto_norma, adjust_comissao, adjust_parlamentar
 from sapl.s3.models import (
     _AcompMateria, _Afastamento, _Anexada, _AssuntoNorma, _Autor, _Autoria,
     _CargoComissao, _CargoMesa, _Comissao, _ComposicaoComissao, _ComposicaoMesa,
@@ -24,9 +33,58 @@ from sapl.s3.models import (
     _TipoSessaoPlenaria, _TipoSituacaoMateria, _TipoSituacaoMilitar,
     _TipoSituacaoNorma, _Tramitacao, _TramitacaoAdministrativo,
     _TramitacaoParecer, _UnidadeTramitacao, _VinculoNormaJuridica)
+from sapl.sessao.models import Bancada, Bloco, CargoBancada, ExpedienteMateria, ExpedienteSessao, IntegranteMesa, OcorrenciaSessao, Orador, OradorExpediente, OrdemDia, PresencaOrdemDia, RegistroVotacao, ResumoOrdenacao, SessaoPlenaria, SessaoPlenariaPresenca, TipoExpediente, TipoResultadoVotacao, TipoSessaoPlenaria, VotoParlamentar
 
 
 mapa = [
+    {
+        'name': 'nao importar',
+        's31_model': [
+            AudienciaPublica,
+            TipoAudienciaPublica,
+            CasaLegislativa,
+            AppConfig,
+            NivelInstrucao,
+            Frente,
+            AssuntoMateria,
+            TipoVinculoNormaJuridica,
+            CargoBancada,
+            Bloco,
+            ResumoOrdenacao,
+            LexmlProvedor,
+            LexmlPublicador,
+            Painel,
+            Cronometro,
+            TipoNota,
+            TipoVide,
+            TipoDispositivo,
+            TipoPublicacao,
+            VeiculoPublicacao,
+            Vide,
+            Nota,
+            Dispositivo,
+            Publicacao,
+            TipoDispositivoRelationship,
+            TextoArticulado,
+            TipoTextoArticulado,
+            PerfilEstruturalTextoArticulado,
+            AcompanhamentoDocumento,
+            Bancada,
+            Coligacao,
+            AnexoAudienciaPublica,
+            AcompanhamentoMateria,
+            ComposicaoColigacao,
+            AnexoNormaJuridica,
+            OcorrenciaSessao,
+            ComissoesDocumentoAcessorio,
+            TipoProposicao,
+            Dependente,
+            'TipoProposicao_perfis',
+            'Frente_parlamentares',
+            'Bloco_partidos',
+
+        ]
+    },
     {
         'name': '_legislatura',
         's30_model': _Legislatura,
@@ -44,7 +102,6 @@ mapa = [
         'name': '_partido',
         's30_model': _Partido,
         's31_model': Partido,
-        'reset': True,
         'fields': {
             'id': 'cod_partido',
             'sigla': 'sgl_partido',
@@ -98,7 +155,8 @@ mapa = [
             'sigla': 'sgl_tipo_comissao',
             'dispositivo_regimental': 'des_dispositivo_regimental',
             'ind_excluido': 'ind_excluido'
-        }
+        },
+        'adjust': adjust_tipo_comissao
     },
 
     {
@@ -123,232 +181,274 @@ mapa = [
             'ind_excluido': 'ind_excluido'
         }
     },
-
     {
         'name': '_tipomaterialegislativa',
         's30_model': _TipoMateriaLegislativa,
         's31_model': TipoMateriaLegislativa,
         'fields': {
-            '': 'ord_tipo_materia',
-            '': 'tip_materia',
-            '': 'sgl_tipo_materia',
-            '': 'des_tipo_materia',
+            'id': 'tip_materia',
+            'sigla': 'sgl_tipo_materia',
+            'descricao': 'des_tipo_materia',
             'ind_excluido': 'ind_excluido'
         }
     },
-
-
-
-
-
-
     {
         'name': '_statustramitacao',
         's30_model': _StatusTramitacao,
-        's31_model': None,
+        's31_model': StatusTramitacao,
         'fields': {
-            '': 'cod_status',
-            '': 'sgl_status',
-                '': 'des_status',
-                '': 'ind_fim_tramitacao',
-                '': 'ind_retorno_tramitacao',
-                'ind_excluido': 'ind_excluido'
-        }
+            'id': 'cod_status',
+            'sigla': 'sgl_status',
+            'descricao': 'des_status',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_statustramitacao
     },
     {
         'name': '_statustramitacaoadministrativo',
         's30_model': _StatusTramitacaoAdministrativo,
-        's31_model': None,
+        's31_model': StatusTramitacaoAdministrativo,
         'fields': {
-            '': 'cod_status',
-            '': 'sgl_status',
-                '': 'des_status',
-                '': 'ind_fim_tramitacao',
-                '': 'ind_retorno_tramitacao',
-                'ind_excluido': 'ind_excluido'
-        }
+            'id': 'cod_status',
+            'sigla': 'sgl_status',
+            'descricao': 'des_status',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_statustramitacao
     },
-    {
-        'name': '_statustramitacaoparecer',
-        's30_model': _StatusTramitacaoParecer,
-        's31_model': None,
-        'fields': {
-            '': 'cod_status',
-            '': 'sgl_status',
-                '': 'des_status',
-                '': 'ind_fim_tramitacao',
-                '': 'ind_retorno_tramitacao',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
+
     {
         'name': '_tipoautor',
         's30_model': _TipoAutor,
-        's31_model': None,
+        's31_model': TipoAutor,
         'fields': {
-            '': 'tip_autor',
-            '': 'des_tipo_autor',
-                'ind_excluido': 'ind_excluido'
-        }
+            'id': 'tip_autor',
+            'descricao': 'des_tipo_autor',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_tipo_autor
     },
     {
         'name': '_tipodocumento',
         's30_model': _TipoDocumento,
-        's31_model': None,
+        's31_model': TipoDocumento,
         'fields': {
-            '': 'tip_documento',
-            '': 'des_tipo_documento',
-                'ind_excluido': 'ind_excluido'
+            'id': 'tip_documento',
+            'descricao': 'des_tipo_documento',
+            'ind_excluido': 'ind_excluido'
         }
     },
     {
         'name': '_tipodocumentoadministrativo',
         's30_model': _TipoDocumentoAdministrativo,
-        's31_model': None,
+        's31_model': TipoDocumentoAdministrativo,
         'fields': {
-            '': 'tip_documento',
-            '': 'sgl_tipo_documento',
-                '': 'des_tipo_documento',
-                'ind_excluido': 'ind_excluido'
+            'id': 'tip_documento',
+            'sigla': 'sgl_tipo_documento',
+            'descricao': 'des_tipo_documento',
+            'ind_excluido': 'ind_excluido'
         }
     },
     {
         'name': '_tipoexpediente',
         's30_model': _TipoExpediente,
-        's31_model': None,
+        's31_model': TipoExpediente,
         'fields': {
-            '': 'cod_expediente',
-            '': 'nom_expediente',
-                'ind_excluido': 'ind_excluido'
+            'id': 'cod_expediente',
+            'descricao': 'nom_expediente',
+            'ind_excluido': 'ind_excluido'
         }
     },
     {
         'name': '_tipofimrelatoria',
         's30_model': _TipoFimRelatoria,
-        's31_model': None,
+        's31_model': TipoFimRelatoria,
         'fields': {
-            '': 'tip_fim_relatoria',
-            '': 'des_fim_relatoria',
-                'ind_excluido': 'ind_excluido'
+            'id': 'tip_fim_relatoria',
+            'descricao': 'des_fim_relatoria',
+            'ind_excluido': 'ind_excluido'
         }
     },
     {
         'name': '_tiponormajuridica',
         's30_model': _TipoNormaJuridica,
-        's31_model': None,
+        's31_model': TipoNormaJuridica,
         'fields': {
-            '': 'tip_norma',
-            '': 'sgl_tipo_norma',
-                '': 'des_tipo_norma',
-                '': 'voc_lexml',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_tipoproposicao',
-        's30_model': _TipoProposicao,
-        's31_model': None,
-        'fields': {
-            '': 'tip_proposicao',
-            '': 'des_tipo_proposicao',
-                '': 'ind_mat_ou_doc',
-                '': 'tip_mat_ou_doc',
-                '': 'nom_modelo',
-                'ind_excluido': 'ind_excluido'
+            'id': 'tip_norma',
+            'sigla': 'sgl_tipo_norma',
+            'descricao': 'des_tipo_norma',
+            'equivalente_lexml': 'voc_lexml',
+            'ind_excluido': 'ind_excluido'
         }
     },
     {
         'name': '_tiporesultadovotacao',
         's30_model': _TipoResultadoVotacao,
-        's31_model': None,
+        's31_model': TipoResultadoVotacao,
         'fields': {
-            '': 'tip_resultado_votacao',
-            '': 'nom_resultado',
-                'ind_excluido': 'ind_excluido'
-        }
+            'id': 'tip_resultado_votacao',
+            'nome': 'nom_resultado',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_tiporesultadovotacao
     },
     {
         'name': '_tiposessaoplenaria',
         's30_model': _TipoSessaoPlenaria,
-        's31_model': None,
+        's31_model': TipoSessaoPlenaria,
         'fields': {
-            '': 'tip_sessao',
-            '': 'nom_sessao',
-                'ind_excluido': 'ind_excluido',
-                '': 'num_minimo'
+            'id': 'tip_sessao',
+            'nome': 'nom_sessao',
+            'quorum_minimo': 'num_minimo',
+            'ind_excluido': 'ind_excluido',
         }
     },
     {
-        'name': '_tiposituacaomateria',
-        's30_model': _TipoSituacaoMateria,
-        's31_model': None,
+        'name': '_assuntonorma',
+        's30_model': _AssuntoNorma,
+        's31_model': AssuntoNorma,
         'fields': {
-            '': 'tip_situacao_materia',
-            '': 'des_tipo_situacao',
-                'ind_excluido': 'ind_excluido'
+            'id': 'cod_assunto',
+            'assunto': 'des_assunto',
+            'descricao': 'des_estendida',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_assunto_norma
+    },
+    {
+        'name': '_orgao',
+        's30_model': _Orgao,
+        's31_model': Orgao,
+        'fields': {
+            'id': 'cod_orgao',
+            'nome': 'nom_orgao',
+            'sigla': 'sgl_orgao',
+            'unidade_deliberativa': 'ind_unid_deliberativa',
+            'endereco': 'end_orgao',
+            'telefone': 'num_tel_orgao',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_orgao
+    },
+    {
+        'name': '_origem',
+        's30_model': _Origem,
+        's31_model': Origem,
+        'fields': {
+            'id': 'cod_origem',
+            'sigla': 'sgl_origem',
+            'nome': 'nom_origem',
+            'ind_excluido': 'ind_excluido'
+        }
+    },
+    {
+        'name': '_regimetramitacao',
+        's30_model': _RegimeTramitacao,
+        's31_model': RegimeTramitacao,
+        'fields': {
+            'id': 'cod_regime_tramitacao',
+            'descricao': 'des_regime_tramitacao',
+            'ind_excluido': 'ind_excluido'
         }
     },
     {
         'name': '_tiposituacaomilitar',
         's30_model': _TipoSituacaoMilitar,
-        's31_model': None,
+        's31_model': SituacaoMilitar,
         'fields': {
-            '': 'tip_situacao_militar',
-            '': 'des_tipo_situacao',
-                'ind_excluido': 'ind_excluido'
+            'id': 'tip_situacao_militar',
+            'descricao': 'des_tipo_situacao',
+            'ind_excluido': 'ind_excluido'
         }
     },
     {
-        'name': '_tiposituacaonorma',
-        's30_model': _TipoSituacaoNorma,
-        's31_model': None,
+        'name': '_comissao',
+        's30_model': _Comissao,
+        's31_model': Comissao,
         'fields': {
-            '': 'tip_situacao_norma',
-            '': 'des_tipo_situacao',
-                'ind_excluido': 'ind_excluido'
-        }
+            'id': 'cod_comissao',
+            'tipo_id': 'tip_comissao',
+            'nome': 'nom_comissao',
+            'sigla': 'sgl_comissao',
+            'data_criacao': 'dat_criacao',
+            'data_extincao': 'dat_extincao',
+            'apelido_temp': 'nom_apelido_temp',
+            'data_instalacao_temp': 'dat_instalacao_temp',
+            'data_final_prevista_temp': 'dat_final_prevista_temp',
+            'data_prorrogada_temp': 'dat_prorrogada_temp',
+            'data_fim_comissao': 'dat_fim_comissao',
+            'secretario': 'nom_secretario',
+            'telefone_reuniao': 'num_tel_reuniao',
+            'endereco_secretaria': 'end_secretaria',
+            'telefone_secretaria': 'num_tel_secretaria',
+            'fax_secretaria': 'num_fax_secretaria',
+            'agenda_reuniao': 'des_agenda_reuniao',
+            'local_reuniao': 'loc_reuniao',
+            'finalidade': 'txt_finalidade',
+            'email': 'end_email',
+            'unidade_deliberativa': 'ind_unid_deliberativa',
+            'ind_excluido': 'ind_excluido'
+        },
+        'adjust': adjust_comissao
     },
-
-
-
-
-
-
-
-
-
-
-
     {
         'name': '_sessaolegislativa',
         's30_model': _SessaoLegislativa,
         's31_model': SessaoLegislativa,
         'fields': {
-            '': 'cod_sessao_leg',
-            '': 'num_legislatura',
-            '': 'num_sessao_leg',
-            '': 'tip_sessao_leg',
-            '': 'dat_inicio',
-            '': 'dat_fim',
-            '': 'dat_inicio_intervalo',
-            '': 'dat_fim_intervalo',
+            'id': 'cod_sessao_leg',
+            'legislatura_id': 'num_legislatura',
+            'numero': 'num_sessao_leg',
+            'tipo': 'tip_sessao_leg',
+            'data_inicio': 'dat_inicio',
+            'data_fim': 'dat_fim',
+            'data_inicio_intervalo': 'dat_inicio_intervalo',
+            'data_fim_intervalo': 'dat_fim_intervalo',
             'ind_excluido': 'ind_excluido'
         }
     },
-
-
     {
-        'name': '_acompmateria',
-        's30_model': _AcompMateria,
-        's31_model': None,
+        'name': '_parlamentar',
+        's30_model': _Parlamentar,
+        's31_model': Parlamentar,
         'fields': {
-            '': 'cod_cadastro',
-            '': 'cod_materia',
-            '': 'end_email',
-            '': 'txt_hash',
+            'id': 'cod_parlamentar',
+            'nivel_instrucao_id': 'cod_nivel_instrucao',
+            'situacao_militar_id': 'tip_situacao_militar',
+            'nome_completo': 'nom_completo',
+            'nome_parlamentar': 'nom_parlamentar',
+            'sexo': 'sex_parlamentar',
+            'data_nascimento': 'dat_nascimento',
+            'cpf': 'num_cpf',
+            'rg': 'num_rg',
+            'titulo_eleitor': 'num_tit_eleitor',
+            'numero_gab_parlamentar': 'num_gab_parlamentar',
+            'telefone': 'num_tel_parlamentar',
+            'fax': 'num_fax_parlamentar',
+            'endereco_residencia': 'end_residencial',
+            'cep_residencia': 'num_cep_resid',
+            'telefone_residencia': 'num_tel_resid',
+            'fax_residencia': 'num_fax_resid',
+            'endereco_web': 'end_web',
+            'profissao': 'nom_profissao',
+            'email': 'end_email',
+            'locais_atuacao': 'des_local_atuacao',
+            'ativo': 'ind_ativo',
+            'biografia': 'txt_biografia',
             'ind_excluido': 'ind_excluido'
-        }
+        },
+        'adjust': adjust_parlamentar
     },
+]
+
+mapa_a_processar = [
+    # TODO: processar
+
+
+
+
+
+
     {
         'name': '_afastamento',
         's30_model': _Afastamento,
@@ -376,17 +476,6 @@ mapa = [
                 '': 'cod_materia_anexada',
                 '': 'dat_anexacao',
                 '': 'dat_desanexacao',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_assuntonorma',
-        's30_model': _AssuntoNorma,
-        's31_model': None,
-        'fields': {
-            '': 'cod_assunto',
-            '': 'des_assunto',
-                '': 'des_estendida',
                 'ind_excluido': 'ind_excluido'
         }
     },
@@ -419,35 +508,7 @@ mapa = [
                 'ind_excluido': 'ind_excluido'
         }
     },
-    {
-        'name': '_comissao',
-        's30_model': _Comissao,
-        's31_model': None,
-        'fields': {
-            '': 'cod_comissao',
-                '': 'tip_comissao',
-                '': 'nom_comissao',
-                '': 'sgl_comissao',
-                '': 'dat_criacao',
-                '': 'dat_extincao',
-                '': 'nom_apelido_temp',
-                '': 'dat_instalacao_temp',
-                '': 'dat_final_prevista_temp',
-                '': 'dat_prorrogada_temp',
-                '': 'dat_fim_comissao',
-                '': 'nom_secretario',
-                '': 'num_tel_reuniao',
-                '': 'end_secretaria',
-                '': 'num_tel_secretaria',
-                '': 'num_fax_secretaria',
-                '': 'des_agenda_reuniao',
-                '': 'loc_reuniao',
-                '': 'txt_finalidade',
-                '': 'end_email',
-                '': 'ind_unid_deliberativa',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
+
     {
         'name': '_composicaocomissao',
         's30_model': _ComposicaoComissao,
@@ -702,17 +763,17 @@ mapa = [
         'fields': {
             '': 'cod_mandato',
             '': 'cod_parlamentar',
-                '': 'tip_afastamento',
-                '': 'num_legislatura',
-                '': 'cod_coligacao',
-                '': 'dat_inicio_mandato',
-                '': 'tip_causa_fim_mandato',
-                '': 'dat_fim_mandato',
-                '': 'num_votos_recebidos',
-                '': 'dat_expedicao_diploma',
-                '': 'txt_observacao',
-                '': 'ind_titular',
-                'ind_excluido': 'ind_excluido'
+            '': 'tip_afastamento',
+            '': 'num_legislatura',
+            '': 'cod_coligacao',
+            '': 'dat_inicio_mandato',
+            '': 'tip_causa_fim_mandato',
+            '': 'dat_fim_mandato',
+            '': 'num_votos_recebidos',
+            '': 'dat_expedicao_diploma',
+            '': 'txt_observacao',
+            '': 'ind_titular',
+            'ind_excluido': 'ind_excluido'
         }
     },
     {
@@ -860,67 +921,7 @@ mapa = [
                 '': 'cod_presenca_ordem_dia'
         }
     },
-    {
-        'name': '_orgao',
-        's30_model': _Orgao,
-        's31_model': None,
-        'fields': {
-            '': 'cod_orgao',
-            '': 'nom_orgao',
-                '': 'sgl_orgao',
-                '': 'ind_unid_deliberativa',
-                '': 'end_orgao',
-                '': 'num_tel_orgao',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_origem',
-        's30_model': _Origem,
-        's31_model': None,
-        'fields': {
-            '': 'cod_origem',
-            '': 'sgl_origem',
-                '': 'nom_origem',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
-    {
-        'name': '_parlamentar',
-        's30_model': _Parlamentar,
-        's31_model': None,
-        'fields': {
-            '': 'cod_parlamentar',
-            '': 'cod_nivel_instrucao',
-                '': 'tip_situacao_militar',
-                '': 'nom_completo',
-                '': 'nom_parlamentar',
-                '': 'sex_parlamentar',
-                '': 'dat_nascimento',
-                '': 'num_cpf',
-                '': 'num_rg',
-                '': 'num_tit_eleitor',
-                '': 'cod_casa',
-                '': 'num_gab_parlamentar',
-                '': 'num_tel_parlamentar',
-                '': 'num_fax_parlamentar',
-                '': 'end_residencial',
-                '': 'cod_localidade_resid',
-                '': 'num_cep_resid',
-                '': 'num_tel_resid',
-                '': 'num_fax_resid',
-                '': 'end_web',
-                '': 'nom_profissao',
-                '': 'end_email',
-                '': 'des_local_atuacao',
-                '': 'ind_ativo',
-                '': 'txt_biografia',
-                '': 'txt_observacao',
-                '': 'ind_unid_deliberativa',
-                '': 'txt_login',
-                'ind_excluido': 'ind_excluido'
-        }
-    },
+
     {
         'name': '_periodocompmesa',
         's30_model': _PeriodoCompMesa,
