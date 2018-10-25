@@ -9,7 +9,6 @@ import magic
 import urllib3
 
 from sapl.base.models import CasaLegislativa
-from sapl.legacy.migration import warn
 from sapl.materia.models import (DocumentoAcessorio, MateriaLegislativa,
                                  Proposicao)
 from sapl.norma.models import NormaJuridica
@@ -117,37 +116,6 @@ def mover_documento(origem, destino):
     os.rename(origem, destino)
 
 
-def get_casa_legislativa():
-    casa = CasaLegislativa.objects.first()
-    if not casa:
-        casa = CasaLegislativa.objects.create(**{k: 'PREENCHER...' for k in [
-            'codigo', 'nome', 'sigla', 'endereco', 'cep', 'municipio', 'uf',
-        ]})
-    return casa
-
-
-def migrar_docs_logo():
-    print('#### Migrando logotipo da casa ####')
-    [(_, origem, destino)] = DOCS[CasaLegislativa]
-    props_sapl = os.path.dirname(origem)
-
-    # a pasta props_sapl deve conter apenas o origem e metadatas!
-    # Edit: Aparentemente há diretório que contém properties ao invés de
-    # metadata. O assert foi modificado para essa situação.
-    sobrando = set(os.listdir(em_media(props_sapl))) - {
-        'logo_casa.gif', '.metadata', 'logo_casa.gif.metadata',
-        '.properties', 'logo_casa.gif.properties', '.objects'}
-
-    if sobrando:
-        warn('Os seguintes arquivos da pasta props_sapl foram ignorados: ' +
-             ', '.join(sobrando))
-
-    mover_documento(origem, destino)
-    casa = get_casa_legislativa()
-    casa.logotipo = destino
-    casa.save()
-
-
 def get_extensao(mime):
     try:
         return EXTENSOES[mime]
@@ -167,6 +135,7 @@ http = urllib3.PoolManager()
 
 erros = []
 
+
 def migrar_docs_por_ids(model):
     for campo, base_origem, base_destino in DOCS[model]:
         print('#### Migrando {} de {} ####'.format(campo, model.__name__))
@@ -179,8 +148,8 @@ def migrar_docs_por_ids(model):
             if campo_file:
                 print('PULANDO', item.id,  item)
                 continue
-            #campo_file.delete()
-            #sleep(3)
+            # campo_file.delete()
+            # sleep(3)
             print(item.pk, item)
 
             url = ('http://187.6.249.156:8480/sapl/%s'
@@ -196,7 +165,7 @@ def migrar_docs_por_ids(model):
                 temp.flush()
 
                 ct = request.getheaders()['Content-Type']
-                print (ct, campo, item)
+                print(ct, campo, item)
 
                 try:
                     name_file = '%s%s' % (campo, get_extensao(ct))
