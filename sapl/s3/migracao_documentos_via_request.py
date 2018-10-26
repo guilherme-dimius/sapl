@@ -142,7 +142,7 @@ def migrar_docs_por_ids(model, sync=None):
         registros = model.objects.all().order_by('-id')
 
         if sync:
-            registros = registros[:sync]
+            registros = registros[:int(registros.count() * sync)]
 
         for item in registros:
 
