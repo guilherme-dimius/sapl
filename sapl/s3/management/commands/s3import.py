@@ -38,7 +38,7 @@ class Command(BaseCommand):
         return migrar_docs_por_ids(model)
 
     def run(self):
-        for item in mapa.mapa:
+        for item in mapa.mapa[1:]:
             print('Migrando...', item['s31_model']._meta.object_name)
             old_list = item['s30_model'].objects.all()
             if 'ind_excluido' in item['fields']:
@@ -47,9 +47,10 @@ class Command(BaseCommand):
             count_old_list = old_list.count()
             count = 0
 
-            if hasattr(self, 'sync') and self.sync and count_old_list > 1000:
-                old_list = old_list.order_by(
-                    '-{}'.format(item['fields']['id']))[:self.sync]
+            if hasattr(self, 'sync') and self.sync and count_old_list > 100:
+                old_list = old_list.order_by('-{}'.format(
+                    item['fields']['id'])
+                )[:int(count_old_list * self.sync)]
 
             for old in old_list:
                 count += 1
