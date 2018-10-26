@@ -46,10 +46,15 @@ class Command(BaseCommand):
 
             count_old_list = old_list.count()
             count = 0
+
+            if hasattr(self, 'sync') and self.sync and count_old_list > 1000:
+                old_list = old_list.order_by(
+                    '-{}'.format(item['fields']['id']))[:self.sync]
+
             for old in old_list:
                 count += 1
 
-                if count_old_list > 1000 and count % 100 == 0:
+                if count % 100 == 0:
                     print('Migrando...',
                           item['s31_model']._meta.object_name,
                           count, 'de', count_old_list)

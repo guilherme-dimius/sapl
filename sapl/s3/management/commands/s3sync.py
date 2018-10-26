@@ -20,7 +20,7 @@ class Command(s3import.Command):
 
     def handle(self, *args, **options):
         self.sync = options['sync']
-        # self.run()
+        self.run()
         self.migrar_documentos()
         self.reset_sequences()
         # self.list_models_with_relation()
