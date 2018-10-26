@@ -9,7 +9,7 @@ from sapl.parlamentares.models import Parlamentar
 from sapl.protocoloadm.models import DocumentoAdministrativo,\
     DocumentoAcessorioAdministrativo
 from sapl.s3 import mapa
-from sapl.s3.migracao_documentos_via_request import migrar_docs_por_ids, erros
+from sapl.s3.migracao_documentos_via_request import migrar_docs_por_ids
 
 
 class Command(BaseCommand):
@@ -29,10 +29,13 @@ class Command(BaseCommand):
             DocumentoAdministrativo,
             DocumentoAcessorioAdministrativo,
         ]:
-            migrar_docs_por_ids(model)
+            erros = self.migrar_docs_por_ids(model)
 
         for e in erros:
             print(e)
+
+    def migrar_docs_por_ids(self, model):
+        return migrar_docs_por_ids(model)
 
     def run(self):
         for item in mapa.mapa[1:]:

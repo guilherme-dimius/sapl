@@ -133,14 +133,16 @@ def get_extensao(mime):
 http = urllib3.PoolManager()
 
 
-erros = []
+def migrar_docs_por_ids(model, sync=None):
 
-
-def migrar_docs_por_ids(model):
+    erros = []
     for campo, base_origem, base_destino in DOCS[model]:
         print('#### Migrando {} de {} ####'.format(campo, model.__name__))
 
-        registros = model.objects.all().order_by('id')
+        registros = model.objects.all().order_by('-id')
+
+        if sync:
+            registros = registros[:int(registros.count() * sync)]
 
         for item in registros:
 
@@ -172,6 +174,7 @@ def migrar_docs_por_ids(model):
                     campo_file.save(name_file, File(temp), save=True)
                 except Exception as e:
                     erros.append(e)
+    return erros
 
 
 def migrar_documentos():
@@ -183,7 +186,7 @@ def migrar_documentos():
         DocumentoAdministrativo,
         DocumentoAcessorioAdministrativo,
     ]:
-        migrar_docs_por_ids(model)
+        erros = migrar_docs_por_ids(model)
 
     for e in erros:
         print(e)
