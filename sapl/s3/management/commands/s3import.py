@@ -15,17 +15,17 @@ from sapl.s3.migracao_documentos_via_request import migrar_docs_por_ids
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        self.run()
-        self.reset_sequences()
+        # self.run()
+        # self.reset_sequences()
         self.migrar_documentos()
         # self.list_models_with_relation()
 
     def migrar_documentos(self):
         for model in [
-            Parlamentar,
-            MateriaLegislativa,
-            DocumentoAcessorio,
-            NormaJuridica,
+            # Parlamentar,
+            # MateriaLegislativa,
+            # DocumentoAcessorio,
+            # NormaJuridica,
             DocumentoAdministrativo,
             DocumentoAcessorioAdministrativo,
         ]:

@@ -148,11 +148,10 @@ def migrar_docs_por_ids(model, sync=None):
 
             campo_file = getattr(item, campo)
             if campo_file:
-                print('PULANDO', item.id,  item)
+                print('PULANDO', item.id,  model._meta.object_name)
                 continue
             # campo_file.delete()
             # sleep(3)
-            print(item.pk, item)
 
             url = ('http://187.6.249.156:8480/sapl/%s'
                    ) % base_origem.format(item.pk)
@@ -161,13 +160,14 @@ def migrar_docs_por_ids(model, sync=None):
 
             try:
                 data = request.data.decode('utf-8')
+                print(item.pk, "Sem arquivo ou outro erro...")
             except:
                 temp = NamedTemporaryFile(delete=True)
                 temp.write(request.data)
                 temp.flush()
 
                 ct = request.getheaders()['Content-Type']
-                print(ct, campo, item)
+                print(item.pk, ct, campo, item)
 
                 try:
                     name_file = '%s%s' % (campo, get_extensao(ct))
