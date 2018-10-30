@@ -1,7 +1,8 @@
+from copy import deepcopy
+
 from django.apps import apps
 from django.core.management.base import BaseCommand
 from django.db import connection
-from django.db.utils import IntegrityError
 
 from sapl.materia.models import MateriaLegislativa, DocumentoAcessorio
 from sapl.norma.models import NormaJuridica
@@ -12,9 +13,14 @@ from sapl.s3 import mapa
 from sapl.s3.migracao_documentos_via_request import migrar_docs_por_ids
 
 
+def _get_registration_key(model):
+    return '%s_%s' % (model._meta.app_label, model._meta.model_name)
+
+
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+        # self.clear()
         self.run()
         self.reset_sequences()
         self.migrar_documentos()
@@ -34,6 +40,30 @@ class Command(BaseCommand):
         for e in erros:
             print(e)
 
+    def clear(self):
+        mapa_for_clear = deepcopy(mapa.mapa)
+        mapa_for_clear.reverse()
+
+        mapa_for_clear = mapa_for_clear[:-1]
+
+        def clear_model(model):
+
+            query = 'delete FROM "%(app_model_name)s";' % {
+                'app_model_name': _get_registration_key(model)
+            }
+
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+
+        for item in mapa_for_clear:
+            print('Limpando...', item['s31_model']._meta.object_name)
+
+            for key, rel in item['s31_model']._meta.fields_map.items():
+                if hasattr(rel, 'one_to_many') and rel.one_to_many:
+                    clear_model(rel.related_model)
+
+            clear_model(item['s31_model'])
+
     def migrar_docs_por_ids(self, model):
         return migrar_docs_por_ids(model)
 
@@ -42,6 +72,12 @@ class Command(BaseCommand):
             print('Migrando...', item['s31_model']._meta.object_name)
             old_list = item['s30_model'].objects.all()
             if 'ind_excluido' in item['fields']:
+                old_list_excluidos = list(old_list.filter(
+                    ind_excluido=1).values_list(
+                        item['fields']['id'], flat=True))
+                item['s31_model'].objects.filter(
+                    id__in=old_list_excluidos).delete()
+
                 old_list = old_list.filter(ind_excluido=0)
 
             count_old_list = old_list.count()
@@ -85,10 +121,7 @@ class Command(BaseCommand):
                     self.print_erro(e, item, new)
 
     def reset_sequences(self):
-        def _get_registration_key(model):
-            return '%s_%s' % (model._meta.app_label, model._meta.model_name)
-
-        def reset_model(model):
+        def reset_id_model(model):
 
             query = """SELECT setval(pg_get_serial_sequence('"%(app_model_name)s"','id'),
                         coalesce(max("id"), 1), max("id") IS NOT null) 
@@ -105,10 +138,10 @@ class Command(BaseCommand):
 
         for model in mapa.mapa[0]['s31_model']:
             if not isinstance(model, str):
-                reset_model(model)
+                reset_id_model(model)
 
         for model in mapa.mapa[1:]:
-            reset_model(model['s31_model'])
+            reset_id_model(model['s31_model'])
 
     def list_models_with_relation(self):
         sapl_apps = apps.get_app_configs()

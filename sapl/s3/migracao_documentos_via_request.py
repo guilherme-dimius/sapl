@@ -133,7 +133,7 @@ def get_extensao(mime):
 http = urllib3.PoolManager()
 
 
-def migrar_docs_por_ids(model, sync=None):
+def migrar_docs_por_ids(model, sync=None, check=False):
 
     erros = []
     for campo, base_origem, base_destino in DOCS[model]:
@@ -152,6 +152,12 @@ def migrar_docs_por_ids(model, sync=None):
                 continue
             # campo_file.delete()
             # sleep(3)
+
+            """if check:
+                for mime, ext in EXTENSOES.items():
+                    filepath = base_destino.format()
+                
+                continue"""
 
             url = ('http://187.6.249.156:8480/sapl/%s'
                    ) % base_origem.format(item.pk)
