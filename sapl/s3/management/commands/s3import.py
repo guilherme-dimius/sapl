@@ -3,6 +3,7 @@ from copy import deepcopy
 from django.apps import apps
 from django.core.management.base import BaseCommand
 from django.db import connection
+import reversion
 
 from sapl.materia.models import MateriaLegislativa, DocumentoAcessorio
 from sapl.norma.models import NormaJuridica
@@ -100,10 +101,12 @@ class Command(BaseCommand):
                     print(old.__dict__)
                     return
 
+                novo = False
                 try:
                     new = item['s31_model'].objects.get(
                         pk=getattr(old, item['fields']['id']))
                 except:
+                    novo = True
                     new = item['s31_model']()
 
                 for new_field, old_field in item['fields'].items():
@@ -114,7 +117,12 @@ class Command(BaseCommand):
                 try:
                     if 'adjust' in item:
                         item['adjust'](new, old)
-                    new.save()
+
+                    if novo:
+                        with reversion.create_revision():
+                            new.save()
+                    else:
+                        new.save()
                 # except IntegrityError as ie:
                 #    pass
                 except Exception as e:
