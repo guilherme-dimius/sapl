@@ -22,7 +22,7 @@ def _get_registration_key(model):
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        self.clear(models=[Participacao, Composicao])
+        # self.clear()
         self.run()
         self.reset_sequences()
         # self.migrar_documentos()
@@ -73,8 +73,6 @@ class Command(BaseCommand):
 
     def run(self):
         for item in mapa.mapa[1:]:
-            if item['name'] != '_composicaocomissao':
-                continue
 
             print('Migrando...', item['s31_model']._meta.object_name)
             old_list = item['s30_model'].objects.all()
