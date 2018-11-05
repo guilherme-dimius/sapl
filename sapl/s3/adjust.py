@@ -4,7 +4,7 @@ from operator import xor
 
 from django.contrib.contenttypes.models import ContentType
 
-from sapl.comissoes.models import Participacao, Comissao
+from sapl.comissoes.models import Participacao, Comissao, Composicao
 from sapl.norma.models import AssuntoNorma, TipoVinculoNormaJuridica
 from sapl.parlamentares.models import Legislatura, Parlamentar, Partido
 from sapl.protocoloadm.models import Protocolo
@@ -104,19 +104,27 @@ def adjust_mandato(new, old):
         new.tipo_afastamento_id = None
 
 
-def adjust_composicao(new, old):
-    new.save()
-    Participacao.objects.filter(composicao=new).delete()
-    p = Participacao()
-    p.composicao = new
-    p.parlamentar_id = getattr(old, 'cod_parlamentar')
-    p.cargo_id = getattr(old, 'cod_cargo')
-    p.titulo = getattr(old, 'ind_titular')
-    p.data_designacao = getattr(old, 'dat_designacao')
-    p.data_desligamento = getattr(old, 'dat_desligamento')
-    p.motivo_desligamento = getattr(old, 'des_motivo_desligamento')
-    p.observacao = getattr(old, 'obs_composicao')
-    p.save()
+def adjust_participacao(new, old):
+    comp = Composicao.objects.filter(
+        comissao_id=old.cod_comissao,
+        periodo_id=old.cod_periodo_comp)
+    if comp.exists():
+        if comp.count() > 1:
+            raise Exception("Existe mais de uma composição registrada")
+        comp = comp.first()
+    else:
+        comp = Composicao()
+        comp.comissao_id = old.cod_comissao
+        comp.periodo_id = old.cod_periodo_comp
+        comp.save()
+    new.composicao_id = comp.id
+    new.parlamentar_id = old.cod_parlamentar
+    new.cargo_id = old.cod_cargo
+    new.titular = old.ind_titular
+    new.data_designacao = old.dat_designacao
+    new.data_desligamento = old.dat_desligamento
+    new.motivo_desligamento = old.des_motivo_desligamento
+    new.observacao = old.obs_composicao
 
 
 def adjust_autor(new, old):

@@ -12,12 +12,12 @@ from sapl.protocoloadm.models import AcompanhamentoDocumento, DocumentoAcessorio
 from sapl.s3.adjust import adjust_tipoafastamento, adjust_tipo_comissao,\
     adjust_statustramitacao, adjust_tipo_autor, adjust_tiporesultadovotacao,\
     adjust_orgao, adjust_assunto_norma, adjust_comissao, adjust_parlamentar,\
-    adjust_mandato, adjust_composicao, adjust_autor, adjust_sessaoplenaria,\
+    adjust_mandato, adjust_autor, adjust_sessaoplenaria,\
     adjust_protocolo, adjust_documentoadministrativo,\
     adjust_documentoacessorioadministrativo, adjust_materialegislativa,\
     adjust_documentoacessorio, adjust_tramitacao, adjust_registrovotacao, \
     adjust_expediente_ordem, adjust_registrovotacao_parlamentar,\
-    adjust_normajuridica, adjust_normarelacionada
+    adjust_normajuridica, adjust_normarelacionada, adjust_participacao
 from sapl.s3.models import (
     _AcompMateria, _Afastamento, _Anexada, _AssuntoNorma, _Autor, _Autoria,
     _CargoComissao, _CargoMesa, _Comissao, _ComposicaoComissao, _ComposicaoMesa,
@@ -87,7 +87,7 @@ mapa = [
             TipoProposicao,
             Dependente,
             Votante,
-            Participacao,
+            Composicao,
             Reuniao,
             Proposicao,
             Orador,
@@ -510,15 +510,14 @@ mapa = [
     {
         'name': '_composicaocomissao',
         's30_model': _ComposicaoComissao,
-        's31_model': Composicao,
+        's31_model': Participacao,
         'fields': {
             'id': 'cod_comp_comissao',
-            'comissao_id': 'cod_comissao',
-            'periodo_id': 'cod_periodo_comp',
             'ind_excluido': 'ind_excluido'
         },
-        'adjust': adjust_composicao
+        'adjust': adjust_participacao
     },
+
     {
         'name': '_autor',
         's30_model': _Autor,

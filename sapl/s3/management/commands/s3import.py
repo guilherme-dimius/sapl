@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 import reversion
 
+from sapl.comissoes.models import Participacao, Composicao
 from sapl.materia.models import MateriaLegislativa, DocumentoAcessorio
 from sapl.norma.models import NormaJuridica
 from sapl.parlamentares.models import Parlamentar
@@ -21,10 +22,10 @@ def _get_registration_key(model):
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        # self.clear()
+        self.clear(models=[Participacao, Composicao])
         self.run()
         self.reset_sequences()
-        self.migrar_documentos()
+        # self.migrar_documentos()
         # self.list_models_with_relation()
 
     def migrar_documentos(self):
@@ -41,13 +42,15 @@ class Command(BaseCommand):
         for e in erros:
             print(e)
 
-    def clear(self):
+    def clear(self, models=None):
         mapa_for_clear = deepcopy(mapa.mapa)
         mapa_for_clear.reverse()
 
         mapa_for_clear = mapa_for_clear[:-1]
 
         def clear_model(model):
+            if models and model not in models:
+                return
 
             query = 'delete FROM "%(app_model_name)s";' % {
                 'app_model_name': _get_registration_key(model)
@@ -70,6 +73,9 @@ class Command(BaseCommand):
 
     def run(self):
         for item in mapa.mapa[1:]:
+            if item['name'] != '_composicaocomissao':
+                continue
+
             print('Migrando...', item['s31_model']._meta.object_name)
             old_list = item['s30_model'].objects.all()
             if 'ind_excluido' in item['fields']:
@@ -119,8 +125,7 @@ class Command(BaseCommand):
                         item['adjust'](new, old)
 
                     if novo:
-                        with reversion.create_revision():
-                            new.save()
+                        new.save()
                     else:
                         new.save()
                 # except IntegrityError as ie:
