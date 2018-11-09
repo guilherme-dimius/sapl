@@ -690,6 +690,7 @@ class _MateriaLegislativa(models.Model):
     txt_latitude = models.TextField()
     txt_longitude = models.TextField()
     ind_publico = models.IntegerField()
+    checkcheck = models.IntegerField()
 
     class Meta:
         managed = False
@@ -743,6 +744,7 @@ class _NormaJuridica(models.Model):
     ind_excluido = models.IntegerField()
     dat_vigencia = models.DateField(blank=True, null=True)
     timestamp = models.DateTimeField()
+    checkcheck = models.IntegerField()
 
     class Meta:
         managed = False
