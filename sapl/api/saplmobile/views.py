@@ -1,6 +1,7 @@
 
 from datetime import datetime
-
+from django import apps
+from django.conf import settings
 from django.db.models import Q
 from django.utils.decorators import classonlymethod
 from django.utils.timezone import utc
@@ -12,7 +13,6 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from reversion.models import Version
 
-from sapl.api.apps import time_refresh_models
 from sapl.api.saplmobile.serializers import AutorParlamentarSerializer
 from sapl.base.models import Autor
 from sapl.materia.models import MateriaLegislativa, Anexada, Autoria,\
@@ -23,35 +23,58 @@ from sapl.sessao.models import SessaoPlenaria, ExpedienteMateria, OrdemDia,\
     RegistroVotacao
 
 
+def _get_registration_key(model):
+    return '%s:%s' % (model._meta.app_label, model._meta.model_name)
+
+
+def __time_refresh_generate():
+
+    from django.contrib.contenttypes.models import ContentType
+    result = {}
+    apps_sapl = [apps.apps.get_app_config(n[5:]) for n in settings.SAPL_APPS]
+
+    for app in apps_sapl:
+        for model in app.get_models():
+            ct = ContentType.objects.get_for_model(model)
+            result[ct.id] = _get_registration_key(model)
+
+    return result
+
+
+_time_refresh_models = {}
+
+
+def time_refresh_models():
+    if not _time_refresh_models:
+        _time_refresh_models.update(__time_refresh_generate())
+    return _time_refresh_models
+
+
 class TimeRefreshDatabaseView(APIView):
 
     permission_classes = (AllowAny,)
 
     def get(self, request, *args, **kwargs):
         data = request.query_params.get('date', None)
-        times = time_refresh_models()
+
+        q = Q()
         if data:
             data = datetime.strptime(data, '%Y-%m-%dT%H:%M:%S.%f')
             data = data.replace(tzinfo=utc)
+            q &= Q(revision__date_created__gte=data)
 
-            times = dict(
-                map(
-                    lambda item: (item[0], item[1].isoformat(
-                        timespec='milliseconds')[:-6]),
-                    filter(
-                        lambda i, d=data: i[1] > d,
-                        times.items()
-                    )
-                )
-            )
-        else:
-            times = dict(
-                map(
-                    lambda item: (item[0], item[1].isoformat(
-                        timespec='milliseconds')[:-6]),
-                    times.items()
-                )
-            )
+        versions = Version.objects.filter(q).order_by(
+            'content_type_id',
+            '-revision__date_created'
+        ).values_list(
+            'content_type_id',
+            'revision__date_created'
+        ).distinct('content_type_id')
+
+        times = {}
+        for vs in versions:
+            times[time_refresh_models()[vs[0]]] = vs[1].isoformat(
+                timespec='milliseconds')[:-6]
 
         return Response(times)
 
