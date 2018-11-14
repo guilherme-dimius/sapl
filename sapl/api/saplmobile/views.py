@@ -105,6 +105,13 @@ class TimeRefreshMobileMixin(ReadOnlyModelViewSet):
             'data_max', kwargs.get('data_max', None))
         tipo_update = self.request.query_params.get(
             'tipo_update', kwargs.get('tipo_update', 'get'))
+        fk_name = self.request.query_params.get(
+            'fk_name', kwargs.get('fk_name', ''))
+        fk_pk = self.request.query_params.get(
+            'fk_pk', kwargs.get('fk_pk', 0))
+
+        if fk_name:
+            qs = qs.filter(**{fk_name: fk_pk})
 
         if data_min:
             data_min = datetime.strptime(data_min, '%Y-%m-%dT%H:%M:%S.%f')
