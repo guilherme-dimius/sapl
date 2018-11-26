@@ -25,7 +25,7 @@ class Command(BaseCommand):
         # self.clear()
         self.run()
         self.reset_sequences()
-        # self.migrar_documentos()
+        self.migrar_documentos()
         # self.list_models_with_relation()
 
     def migrar_documentos(self):
@@ -73,6 +73,8 @@ class Command(BaseCommand):
 
     def run(self):
         for item in mapa.mapa[1:]:
+            if item['s30_model'] is None:
+                continue
 
             print('Migrando...', item['s31_model']._meta.object_name)
             old_list = item['s30_model'].objects.all()
