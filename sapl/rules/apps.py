@@ -2,6 +2,7 @@ from builtins import LookupError
 import logging
 
 from django import apps
+import django
 from django.contrib.auth import get_user_model
 from django.contrib.auth.management import _get_all_permissions
 from django.core import exceptions
@@ -177,7 +178,7 @@ def get_rules():
             try:
                 logger.info("Tentando associar grupos.")
                 print(' ', group_name)
-                for model, perms in rules_list:
+                for model, perms, perms_publicas in rules_list:
                     self.associar(group, model, perms)
             except Exception as e:
                 logger.error(str(e))
